@@ -1,117 +1,116 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React from 'react';
-import type {Node} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
-  useColorScheme,
+  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Keyboard,
+  TextInput,
   View,
+  Alert,
+  Text,
+  Dimensions,
+  StatusBar,
+  Platform,
+  Button,
+  Linking,
 } from 'react-native';
-
 import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  authenticateAsync,
+  hasHardwareAsync,
+  supportedAuthenticationTypesAsync,
+  getEnrolledLevelAsync,
+  cancelAuthenticate,
+} from 'expo-local-authentication';
+// import IntentLauncher, {IntentConstant} from 'react-native-intent-launcher';
+import Constants from 'expo-constants';
+// import DeviceInfo from 'react-native-device-info';
+import * as IntentLauncher from 'expo-intent-launcher';
+import BiometricSettingModule from './src/customModules/BiometricSettingModule';
 
-/* $FlowFixMe[missing-local-annot] The type annotation(s) required by Flow's
- * LTI update could not be added via codemod */
-const Section = ({children, title}): Node => {
-  const isDarkMode = useColorScheme() === 'dark';
+import Home from './src/screen/Home';
+
+const pkg = Constants.manifest.releaseChannel
+  ? Constants.manifest.android.package
+  : 'host.exp.exponent';
+// const pkg = DeviceInfo.getBundleId();
+
+console.log(pkg);
+
+const App = () => {
+  const [isAuthenticate, setIsAuthenticate] = useState(false);
+  const [isBiometricSupport, setIsBiometricSupport] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const isHardwareAsync = await hasHardwareAsync();
+      setIsBiometricSupport(isHardwareAsync);
+      // const result = await authenticateAsync();
+      // setIsAuthenticate(result.success);
+    })();
+  }, []);
+  const onAuthenticate = () => {
+    authenticateAsync({
+      promptMessage: 'Authenticate',
+      fallbackLabel: 'Enter Passcode',
+    })
+      .then(result => {
+        if (!result.success) {
+          console.log(IntentLauncher.ActivityAction.SECURITY_SETTINGS);
+          IntentLauncher.startActivityAsync(
+            IntentLauncher.ActivityAction.SECURITY_SETTINGS,
+            {data: 'package:' + 'com.todo'},
+          )
+            .then(r => console.log(r))
+            .catch(e => console.log('e', e));
+          // Linking.openAppSettings();
+          // IntentLauncher.startActivity({
+          //   action: 'android.settings.SETTINGS',
+          // });
+          // cancelAuthenticate()
+          //   .then(r => console.log(r))
+          //   .catch(e => console.log(e));
+          // openAppSettings();
+          // getEnrolledLevelAsync().then(level => console.log('level ', level));
+          // supportedAuthenticationTypesAsync().then(types =>
+          //   console.log('types ', types),
+          // );
+        } else {
+          setIsAuthenticate(result.success);
+        }
+      })
+      .catch(e => console.log('e', e));
+  };
+
+  const openAppSettings = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('app-settings:');
+    } else {
+      Linking.openSettings();
+    }
+  };
+
+  if (!isAuthenticate) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+        }}>
+        <Button
+          title="Let Me In"
+          onPress={() => {
+            console.log(BiometricSettingModule);
+            BiometricSettingModule.open('sai');
+          }}
+        />
+      </View>
+    );
+  }
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
+    <View>
+      <Home />
     </View>
   );
 };
-
-const App: () => Node = () => {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.js</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-};
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
