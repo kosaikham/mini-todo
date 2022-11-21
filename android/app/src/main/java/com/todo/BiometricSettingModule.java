@@ -2,7 +2,6 @@ package com.todo;
 
 import android.content.Intent;
 import android.provider.Settings;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -22,9 +21,8 @@ public class BiometricSettingModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void open(String name){
-        Log.d("CalendarModule", "Create event called with name: " + name);
-//        Intent intent = new Intent(Settings.ACTION_BIOMETRIC_ENROLL);
-//        getCurrentActivity().startActivity(intent);
+    public void open(){
+        Intent intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
+        getCurrentActivity().startActivity(intent);
     }
 }
